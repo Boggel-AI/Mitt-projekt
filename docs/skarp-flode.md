@@ -33,8 +33,14 @@ marknadsbild och fynd med länk i steg 6 och på Lindos kort. **§0.18**
 låter Lindo hjälpa användaren att hitta sin första kundgrupp — där
 problemet är mest akut och som kan och vill betala — i steg 4, och stämma
 av valet mot researchen i steg 8, utan nya steg och utan nya anrop.
-**§0 gäller; §0.18 går före §0.17, som går före §0.16, som går före §0.15
-och §0.14, som går före resten av §0.**
+**§0.19** lägger in fyra ramverk som bakgrund, inte som egna steg:
+läget i branschen (nulägesanalys) i researchen och överst i steg 6, de
+fem P:na som täckning i idémodellen, "Första versionen" (MoSCoW) i
+testkortet och "Underlag för din rådgivare" (SWOT och de fem P:na) sist
+i slutkortet — byggt av det användaren sagt och det researchen hittat,
+utan nya anrop.
+**§0 gäller; §0.19 går före §0.18, som går före §0.17, som går före
+§0.16, som går före §0.15 och §0.14, som går före resten av §0.**
 §1–§10 beskriver fas 1–2 och står kvar som historik; där de krockar med §0
 gäller §0.
 
@@ -2028,6 +2034,288 @@ vardagligt språk, hypoteser som hypoteser, inga påhittade fakta.
 (`withFirstGroup`, `startSegment` efter steg 4, steg 8:s kort,
 `closingFirstGroup`), `IdeaMap` (`extra`), `ClosingCard` och `render.ts`
 (raden "Första kundgrupp"). Kompass-koden är orörd.
+
+### 0.19 Ramverken som bakgrund: läget i branschen, de fem P:na, första versionen och underlaget för rådgivaren
+
+Fyra etablerade ramverk (nulägesanalys, de fem P:na, MoSCoW och SWOT) är
+nu med i Skärp-läget, men **inget av dem är ett eget steg**. Flödet har
+fortfarande tio steg och tar ungefär 15 minuter. Ramverken arbetar i
+bakgrunden. De gör researchen, korten och slutkortet rikare och gör
+slutkortet användbart för en rådgivare, men de blir aldrig mallar som
+användaren fyller i. Rapporten (`docs/rapport-affarsideer.md`) varnar för
+att "bara skriva en snygg SWOT" och för att låsa processen vid en mall.
+Därför bygger allt nedan på det användaren faktiskt sagt och det
+researchen faktiskt hittat. Hellre färre punkter än punkter som kunde
+stått om vilken idé som helst. Beslutet och skälen står i
+`docs/decisions.md`.
+
+**§0.19 går före §0.17 där den beskriver den breda körningens sökplan och
+marknadsbilden, och före §0.11 och §0.16 där de beskriver slutkortet.**
+Principerna gäller oförändrade: ge först, ICP-nivå, vardagligt språk
+utan facktermer (ramverkens namn syns aldrig i frågor eller kort, bara
+som rubriker i rådgivarunderlaget), och ärlighetsskyddet (inga påhittade
+siffror, namn eller källor). Budgeten är också oförändrad: 20 logiska
+anrop utan följdfrågor, 21 med ett tillägg i steg 1, tak omkring 25.
+Inget av de fyra ramverken har ett eget AI-anrop.
+
+#### 1. Läget i branschen (nulägesanalysen)
+
+1. **Researchen.** Den breda körningens sökplan (`MARKNAD_INSTRUCTIONS`,
+   `research/plans.ts`) har två nya vinklar. Punkt 6, "Läget i branschen",
+   täcker regler och krav som påverkar idén, trender och förändringar,
+   och varför idén är aktuell just nu. Punkt 7, "Priser och köp", täcker
+   vad befintliga lösningar kostar enligt deras egna prissidor (som
+   `fetch_url` får hämta) och hur köp brukar gå till. Planen säger
+   uttryckligen: "Hitta aldrig på en marknadsstorlek, en tillväxtsiffra
+   eller ett pris — bara det en källa själv skriver." Agentens lista får
+   kategorin `BRANSCH` (`FindingCategory` `bransch`), som sorteras efter
+   de indirekta alternativen (produkter före forskning som förut). Den
+   breda körningens `max_steps` går från 14 till 15. I exempeldatan för
+   de fem fixturidéerna går kostnaden från 0,494 till 0,519 USD, alltså
+   ungefär +5 %. Den riktade körningen är oförändrad.
+
+2. **Källans egen text.** Ett fynd har nu `sourceText`, träffens egen
+   rubrik och utdrag. Agentens mening läggs ibland före utdraget, men en
+   siffra i läget i branschen godtas bara om den står i källans egen text,
+   aldrig bara i agentens sammanfattning (`numbersGrounded`). Ett
+   branschfynd slås inte ihop med ett fynd från en annan länk, så
+   prissidan behåller sin egen länk i stället för att hamna under
+   företagets startsida.
+
+3. **Marknadsbilden** (`condenseMarket`, samma anrop som förut) får
+   avsnittet `industry`: 0–5 punkter, var och en med en aspekt (`aktuellt`
+   varför nu, `trend`, `kop` så går köp till, `pris` prisnivå, `regel`
+   regler och krav), en mening och en hänvisning till ett fynd.
+   Kontrollerna (`marketPictureProblem`, `settleIndustry`) kräver att:
+   - fyndet finns och inte är forskning,
+   - texten är en mening,
+   - varje siffra står i källans egen text.
+
+   Annars stryks punkten. Högst två punkter per aspekt och fem totalt, i
+   aspekternas ordning. Länken och källans slag kommer alltid från fyndet.
+
+   Varje aspekt som den breda körningen inte gav något underlag om blir
+   en kunskapslucka (`industryGaps`). Den riktade körningen söker inte
+   läget, så dess tomma lista räknas inte som en lucka, och inte heller
+   en bild från före §0.19. `mergeMarkets` slår ihop bilderna (samma
+   aspekt och länk bara en gång) och räknar om luckorna.
+
+   MARKNADSBILDEN i varje senare anrop får raden "Läget i branschen — med
+   källa; en siffra här står i källan, men upprepa den aldrig i dina egna
+   texter: …" med luckorna sist. Korten får alltså bygga på läget, men
+   ärlighetskontrollen stoppar fortfarande siffror i Lindos egna texter.
+
+4. **Steg 6** visar läget **överst, före konkurrenterna**, under rubriken
+   "Läget i branschen". Den visar 3–4 punkter (`industryShown`: högst
+   fyra, helst en per aspekt), var och en med:
+   - aspekten som etikett ("Varför nu", "Trend", "Så går köp till",
+     "Prisnivå", "Regler och krav"),
+   - en mening,
+   - en länk ("Hittat på nätet: …").
+
+   Under punkterna står luckorna i en rad: "Inget underlag än om {aspekter}
+   — det är en kunskapslucka, inte något jag gissar på." Steg 6 gör
+   fortfarande ingen ny sökning. Läget räknas in bland fynden som
+   insiktsögonblicket efter steg 6 och Lindos kort får förankra sig i.
+
+#### 2. De fem P:na i idémodellen
+
+5. **Täckningen.** `ctx.ideaModel.fem` håller de fem P:na:
+   - **Produkt**: vad kunden får.
+   - **Pris**: vad kunden betalar, för vad och hur.
+   - **Plats**: var kunden köper och hur lösningen når fram.
+   - **Påverkan**: hur kunderna får höra talas om idén och blir övertygade.
+   - **Personal**: vem som gör jobbet, grundarens och teamets resurser.
+
+   Varje P har en status (saknas, svagt underlag, täckt), en sammanfattning
+   och en källa (`anvandare`, `ai_tolkning`, `extern_kalla` med länk).
+
+6. **Uppdateringen** görs i anrop som redan finns. Den dolda `modelUpdate`
+   får listan `fem`, där varje post har `p`, `status`, `text` (högst 15 ord),
+   `kalla` och `finding`. Listan finns i anropen efter steg 1, 2, 3, 4, 6
+   och 8. Koden kontrollerar källan (`settleFemUpdate`):
+   - **"Användarens ord"** gäller bara när minst hälften av de bärande
+     orden, och minst två, står i det användaren skrivit. Ett enda
+     gemensamt ord räcker inte.
+   - **"Research"** gäller bara när fyndet finns i marknadsbilden, och då
+     följer länken med.
+   - **Allt annat** blir Lindos tolkning.
+   - **"Täckt"** står bara kvar när användarens ord känns igen. Annars blir
+     statusen "svagt underlag".
+
+   `mergeFive` låter aldrig statusen gå bakåt.
+
+7. **Styrningen.** IDÉMODELL-blocket skickas med i varje anrop. Det har en
+   rad med status och sammanfattning per P och påminnelsen "välj hellre
+   kort som berör ett P som saknas; Pris och Påverkan ska beröras senast i
+   steg 7–8". Kortreglerna säger "Saknas ett av de fem P:na: välj hellre
+   ett kort som berör det, med något konkret för just den här idén —
+   aldrig en checklista."
+
+   Verktygsvalet (`selectTools`, §0.13) ger verktyg som tar upp ett P som
+   saknas +1,5 i poäng (`fivePGaps`):
+   - Pris → pris och betalare.
+   - Påverkan → distribution och byte.
+   - Plats → inköp och distribution.
+   - Produkt → leverans och problem.
+   - Personal → grundare och leverans.
+
+   Valet är fortfarande deterministiskt och sker i kod.
+
+8. **Pris och Påverkan berörs alltid**, mest naturligt i steg 7–8. Steg
+   7:s anrop tar fram steg 8:s kort (§0.18 punkt 6). Avstämningskortet ska
+   säga något konkret om vad gruppen betalar för i dag eller hur man kan ta
+   betalt, med prisnivån ur läget i branschen om den finns, när Pris
+   saknas. Kortet om första vägen är Påverkan: hur gruppen får höra talas
+   om idén och blir övertygad.
+
+   Den mjuka kontrollen `priceAndReachProblem` ber om en ny runda när Pris
+   eller Påverkan har status "saknas" och varken tidigare kort eller steg
+   8:s kort och slutsats berör det (`touchesP`: vardagliga ord som pris,
+   betala, kostar och kr för Pris; höra talas om, nå, övertyga och tips för
+   Påverkan). Det är en mjuk kontroll, så efter två rundor behålls svaret.
+
+   Slutkortets 5P-rader är därför en sista garanti. Saknar idémodellen Pris
+   eller Påverkan visas det som finns i sessionen: "{betalare} betalar —
+   priset är inte satt än" eller "Första vägen: …". Finns ingenting blir
+   raden "Saknas: …".
+
+#### 3. Första versionen (MoSCoW) i testkortet
+
+9. **Rutan.** Slutkortets bedömningsanrop (`closingAssessment`, samma
+   anrop som förut) fyller i `testCard.firstVersion`. Det kopplas till
+   kärnan från steg 7 (KÄRNAN i underlaget) och till det första testet:
+   - **"Måste ha"**: 1–3 saker testet inte klarar sig utan.
+   - **"Kan vänta"**: 0–3 saker.
+   - **"Inte nu"**: 0–3 saker användaren uttryckligen inte ska bygga än.
+
+   Syftet är att användaren inte ska bygga för mycket innan idén är
+   testad, inte att planera en hel produkt.
+
+   Kontrollen (`firstVersionProblem`) kräver korta, konkreta punkter
+   (högst 10 ord) och stoppar:
+   - dubbletter mellan delarna,
+   - floskler som "En bra användarupplevelse" (`GENERIC_VERSION`,
+     `genericPhraseProblem`),
+   - påhittade siffror och namn (ärlighetskontrollen).
+
+   `settleFirstVersion` trimmar och tar högst tre per del.
+
+   Rutan står i testkortet, efter "Inom 48 timmar", med tre kolumner och
+   olika romber: fylld för måste ha, guldkant för kan vänta och streckad
+   för inte nu. I kopian står den som "Första versionen:" med tre
+   underpunkter.
+
+#### 4. Underlag för din rådgivare (SWOT och de fem P:na)
+
+10. **Sist i slutkortet, ihopfällt från början.** Rubriken är "Underlag för
+    din rådgivare" med "SWOT och de fem P:na · Visa". Knappen har
+    `aria-expanded`. Underlaget byggs **i kod** (`buildAdvisorBasis`,
+    `skarp/advisor-basis.ts`) av det sessionen redan har. Det finns inget
+    nytt AI-anrop och inget nytt påstående. Schemana blev inte för stora,
+    så något tredje anrop behövdes inte.
+
+11. **SWOT, högst tre punkter per ruta**, var och en med sin källa:
+    - **Styrkor**: slutkortets "det som är starkt" (med användarens ord,
+      "Dina ord") och personprofilen från steg 2 (erfarenhet, färdighet,
+      tillgång; "Dina ord" när texten står i svaren, annars Lindos
+      tolkning).
+    - **Svagheter**: Motsägaren i Lindos råd, "Det svagaste antagandet: …"
+      och Ordförandens "Största risken: …" (Lindos tolkning).
+    - **Möjligheter**: Optimisten och "Så kan du vinna" från steg 6 (Lindos
+      tolkning, med länk till fyndet när kortet bygger på ett).
+    - **Hot**: de två första direkta konkurrenterna med vad de själva säger
+      ("Hittat på nätet" med länk), varningen om en konflikt i affären, och
+      läget i branschen när det är en regel eller en trend (med länk).
+
+    Varje punkt sållas som Lindos kort (`sourcedPointProblem`): floskler
+    stoppas, och punkten måste vara förankrad i idén, svaren,
+    marknadsbilden eller idémodellen. Dubbletter tas bort. En tom ruta får
+    texten "Inget i sessionen som håller här än." Rutan fylls aldrig ut.
+
+12. **De fem P:na, en rad per P**, med status och källa. Ett P som saknas
+    får raden "Saknas: …" med vad som behövs, till exempel "Saknas: vem som
+    gör jobbet och vad du själv kan bära." Statusen upprepas inte då.
+
+    Ett P med ett fynd som källa länkar med fyndets eget namn ("Hittat på
+    nätet: Ragn-Sells priser").
+
+    Saknar idémodellen ett P men sessionen har något konkret om det, blir
+    raden "svagt underlag", märkt med sin källa (`fiveRows`):
+    - Produkt: kärnan i steg 7.
+    - Pris: vem som betalar.
+    - Påverkan: första vägen.
+    - Personal: personprofilen.
+
+13. **Kopian.** Underlaget är det sista avsnittet i kopian/exporten
+    (`renderClosingCardMarkdown`): "**Underlag för din rådgivare**", en
+    rad om hur det är byggt, SWOT-rutorna med källmärkning (_Dina ord_,
+    _Lindos tolkning_, [Hittat på nätet: namn](länk)) och "De fem P:na:".
+
+#### 5. Testerna
+
+14. **Kunskapstestet, del 13**:
+    - `numbersGrounded`, även mot agentens mening.
+    - Kontrollen av `industry` per fixtur (den påhittade siffran i
+      exempeldatan stryks).
+    - Sammanslagningen och `industryShown`.
+    - MARKNADSBILDEN-raden.
+    - `mergeFive` och `settleFemUpdate` (användarens ord, ett enda
+      gemensamt ord, research med länk, att "täckt" kräver användarens
+      ord).
+    - Verktygslyftet.
+    - `touchesP` och `priceAndReachProblem`.
+    - IDÉMODELL-raden.
+    - `firstVersionProblem`.
+    - Källmärkningen och sållningen i `buildAdvisorBasis`.
+    - `fiveRows`, även fyndets namn.
+    - Kopian.
+
+    Researchtestet (`--torr`) har kategorin `bransch` och sökplanens sju
+    vinklar.
+
+15. **Flödestestet**:
+    - Steg 6 skriver ut läget och, med exempeldata, kräver 3–4 punkter med
+      länk och ingen påhittad siffra.
+    - Slutkortet kräver källmärkning på varje SWOT-punkt, fem 5P-rader och
+      att Pris och Påverkan berörs i sessionen. I mock-läget kan den sista
+      kontrollen inte prövas, eftersom mockens texter inte berör något.
+      Testet säger det, och mekanismen prövas då i kunskapstestet.
+    - Kopian ska ha "Första versionen:" och sluta med "Underlag för din
+      rådgivare".
+
+    Webbläsarriggen kontrollerar:
+    - att läget står före "Direkta konkurrenter" i steg 6,
+    - att rutan "Första versionen" finns,
+    - att underlaget är ihopfällt och sist,
+    - att underlaget öppnas med knappen.
+
+**Konstruktion (`gxy652fxr`).**
+- `research/types.ts`: `bransch`, `sourceText`.
+- `research/plans.ts`: sökplanen, `BRANSCH`, `max_steps` 15.
+- `research/perplexity-agent.server.ts`: ordningen, `sourceText`,
+  dedupliceringen.
+- `skarp/schemas.ts`: `industry`, `fem` i `IdeaModelUpdateSchema`,
+  `testCard.firstVersion`.
+- `skarp/types.ts`: `market.industry`/`industryGaps`, `ideaModel.fem`,
+  etiketterna, raderna i MARKNADSBILDEN och IDÉMODELL.
+- `skarp/research.ts`: `numbersGrounded`, `settleIndustry`,
+  `industryShown`, `mergeMarkets`.
+- `skarp/five-p.ts` (ny, klientsäker): konstanterna, `mergeFive`,
+  `fivePGaps`, `touchesP`, `fiveLine`.
+- `skarp/idea-model.ts`.
+- `skarp/sharp.ts`: `settleFemUpdate`, kortregeln,
+  `GROUP_CHECK_CARDS_RULE`, `sourcedPointProblem`.
+- `knowledge/select.ts` och `knowledge/block.ts`: `pGaps`.
+- `step7-mechanism.ts`: `priceAndReachProblem`.
+- `step10-closing.ts`: `firstVersion`, `advisorBasis`.
+- `skarp/advisor-basis.ts` (ny, bara server).
+- `skarp/render.ts`: kopian.
+- `RealityView`: läget överst.
+- `ClosingCard`: `FirstVersionBox`, `AdvisorBasisSection`.
+- `routes/skarp.tsx`.
+
+Kompass-koden är orörd.
 
 ## 1. Principerna, kort
 

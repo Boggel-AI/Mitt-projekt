@@ -56,6 +56,49 @@ oftare inte till steg 6, och steg 8:s fråga handlar om gruppen i stället
 för om det unika (det läses nu ur det användaren redan sagt). Se
 `docs/skarp-flode.md` §0.18.
 
+## Skärp: ramverken blir bakgrund, inte egna steg
+
+Nulägesanalys, de fem P:na, MoSCoW och SWOT finns nu med i Skärp-läget,
+men inget av dem blir ett eget steg. Skälen:
+
+1. **Tid och flöde.** Flödet ska förbli tio steg och cirka 15 minuter.
+   Fyra ramverkssteg till skulle göra det nästan dubbelt så långt och
+   bryta grundprincipen ge först, fråga sen. Användaren skulle fylla i
+   rutor i stället för att Lindo tänker med hen.
+2. **Rapporten varnar för mallar.** `docs/rapport-affarsideer.md` varnar
+   uttryckligen för att "bara skriva en snygg SWOT" och för att låsa
+   processen vid en mall. En SWOT som användaren fyller i från noll blir
+   generisk: punkter som kunde stått om vilken idé som helst.
+3. **Underlaget finns redan.** Sessionen har redan materialet ramverken
+   behöver: personprofilen och det som är starkt, Lindos råd och det
+   svagaste antagandet, Optimisten och "Så kan du vinna", konkurrenterna
+   i researchen, idémodellens betalare och första vägen. När ramverken
+   byggs av det materialet bär varje punkt en riktig källa ("Dina ord",
+   "Lindos tolkning", "Hittat på nätet" med länk). Punkterna sållas som
+   Lindos kort, och en tom ruta får stå tom.
+
+Så här arbetar de i stället:
+
+- **Läget i branschen** följer med i den breda researchen. Det kostar ett
+  agentsteg till, ungefär +5 % i exempeldatan (0,494 → 0,519 USD för fem
+  idéer). Siffror godtas bara när de står i källans egen text.
+- **De fem P:na** är en täckningskontroll i idémodellen. Den styr
+  verktygsvalet och korten mot det som saknas och ser till att Pris och
+  Påverkan berörs senast i steg 7–8.
+- **MoSCoW** blir rutan "Första versionen" i testkortet, i slutkortets
+  befintliga anrop.
+- **SWOT** och de fem P:na byggs i kod till ett ihopfällt "Underlag för
+  din rådgivare" sist i slutkortet. Det är riktat till rådgivaren, inte en
+  uppgift för grundaren.
+
+Inget ramverk har ett eget AI-anrop, och budgeten är oförändrad. Det
+fanns utrymme för ett tredje anrop för slutkortet om schemana blev för
+stora, men det behövdes inte. Priset: rådgivarunderlaget kan bara bli så
+bra som sessionen. En kort eller vag session ger tunna rutor, och då
+visas det som tunt i stället för att fyllas ut. Ramverkens namn syns
+bara som rubriker i underlaget, aldrig i frågor eller kort. Se
+`docs/skarp-flode.md` §0.19.
+
 ## Samtalsdesign prioriteras över kunskapsbas
 
 Upplevelsen av att bli förstådd skapas genom interaktionsdesign i systemprompten (följdfrågor, reflektion av mönster), inte genom en fristående "psykologikunskapsbas".

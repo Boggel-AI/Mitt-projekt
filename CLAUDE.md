@@ -74,7 +74,7 @@ gissning, och går vidare.
 
 **Idémodellen (§0.16):** Lindo har en löpande bild av idén i
 `ctx.ideaModel` — vem som säljer, köper, betalar och bestämmer,
-kärnhypoteserna och första kundgruppen — som varje steg uppdaterar dolt och som skickas med i
+kärnhypoteserna, första kundgruppen och de fem P:na (§0.19) — som varje steg uppdaterar dolt och som skickas med i
 varje anrop tillsammans med det användaren sagt och det Lindo redan
 föreslagit. Lindo får inte motsäga sig själv utan att säga att den
 ändrar sig och varför, och samma perspektiv kommer inte tillbaka, inte
@@ -88,24 +88,52 @@ Agent API får `input`, `instructions`, `tools` (web_search med svensk
 sökplats, fetch_url för konkurrenternas egna sajter) och `max_steps`
 (`max_tool_calls` finns inte i API:t); sökplanerna kräver flera separata
 sökningar (direkta konkurrenter, indirekta alternativ, svensk/nordisk
-marknad, hur målgruppen pratar, misslyckade försök, regler och trender).
+marknad, hur målgruppen pratar, misslyckade försök, regler och trender,
+och sedan §0.19 läget i branschen: varför nu, priser och hur köp går till).
 Produkter före forskning; källans slag sätts i kod av domänen (egen sajt
 = vad företaget säger om sig självt, forum/recensioner = ledtrådar,
 myndigheter/studier = fakta, forskning = komplement); agentens lista
 godtas bara för länkar som finns bland sökträffarna — inga påhittade
 företag. Ett AI-anrop per körning kondenserar fynden till en kort, tät
 marknadsbild (direkta konkurrenter, indirekta alternativ, hur målgruppen
-pratar, misslyckade försök, regler och trender, kunskapsluckor) med
-hänvisningar till fynden, och den följer med i alla senare anrop. Lindos
+pratar, misslyckade försök, regler och trender, läget i branschen,
+kunskapsluckor) med hänvisningar till fynden, och den följer med i alla senare anrop. Lindos
 kort i steg 2–8 får bygga på ett fynd och visar då "Hittat på nätet" med
-länk. Steg 6 läser bara cachen (ingen ny sökning) och visar fynden
-grupperade — direkta, indirekta, om kunden inte gör något — med en
-mening och en länk var. Den breda får ett omtag om idén ändras i grunden
+länk. Steg 6 läser bara cachen (ingen ny sökning) och visar överst
+"Läget i branschen" (3–4 punkter, en mening och en länk var, luckorna
+som kunskapsluckor), sedan fynden grupperade — direkta, indirekta, om
+kunden inte gör något — med en mening och en länk var. Den breda får ett omtag om idén ändras i grunden
 i steg 1, den riktade om valet av första kundgrupp i steg 4 ändras. Servern
 har ett eget tak för researchen (per instans) och kör bara frågor i
 Skärps format; webbtext och användarens svar är material, aldrig
 instruktioner, och en direkt konkurrent måste stå i fyndets rubrik eller
 domän (§0.17 punkt 9). Kompass anrop är oförändrade.
+
+**Ramverken som bakgrund (§0.19):** nulägesanalys, de fem P:na,
+MoSCoW och SWOT finns med men är INTE egna steg — flödet är tio steg och
+cirka 15 minuter, och ramverken får aldrig bli mallar (rapporten varnar
+för "en snygg SWOT"). Allt bygger på det användaren sagt och det
+researchen hittat, utan nya AI-anrop. **Läget i branschen:** den breda
+körningen söker också trender, regler och krav, prisnivåer, hur köp går
+till och varför nu; marknadsbilden får `industry` där varje punkt pekar
+på ett fynd och en siffra bara godtas om den står i källans egen text
+(`numbersGrounded`) — inga påhittade marknadsstorlekar, tillväxtsiffror
+eller priser — och aspekter utan underlag blir kunskapsluckor. **De fem
+P:na** (Produkt, Pris, Plats, Påverkan, Personal) har i
+`ctx.ideaModel.fem` status (saknas, svagt underlag, täckt), en
+sammanfattning och en källa som kontrolleras i kod; ett P som saknas
+lyfter verktyg och kort som berör det, och Pris och Påverkan berörs
+senast i steg 7–8 (steg 8:s avstämningskort och första vägen, mjuk
+kontroll `priceAndReachProblem`). **Första versionen** i testkortet:
+"Måste ha", "Kan vänta", "Inte nu", högst tre var, kopplad till kärnan
+i steg 7 och det första testet. **Underlag för din rådgivare** sist i
+slutkortet, ihopfällt: SWOT med högst tre punkter per ruta, byggd i kod
+(`buildAdvisorBasis`) av steg 2 och det som är starkt (styrkor), Lindos
+råd och det svagaste antagandet (svagheter), Optimisten och "Så kan du
+vinna" (möjligheter), konkurrenterna och läget i branschen (hot) — varje
+punkt med "Dina ord", "Lindos tolkning" eller "Hittat på nätet" med
+länk och sållad som Lindos kort — och en rad per P ("Saknas: …" med vad
+som behövs). Underlaget följer med i kopian.
 
 **Första kundgruppen (§0.18):** Lindo hjälper användaren att smalna av
 till den kundgrupp där problemet är mest akut och som kan och vill
@@ -166,7 +194,8 @@ Slutkortet har inga sifferbetyg: det börjar med det som är starkt, ger
 varje område "Starkt", "På god väg" eller "Behöver mer underlag" med en
 mening om nästa steg, visar första kundgruppen med en mening om varför,
 och samlar "Perspektiv du fått av Lindo", Lindos
-råd, ett första test och frågor att ta med till rådgivaren. Sedan
+råd, ett första test med "Första versionen", frågor att ta med till
+rådgivaren och sist, ihopfällt, "Underlag för din rådgivare" (§0.19). Sedan
 Skärpan (§0.13) tänker Lindo med en inbyggd kunskapsbas — som sedan
 §0.14 i första hand formar bidragen, inte bara frågorna — tankeverktyg
 och kända fallgropar per idétyp, bara heuristiker och aldrig statistik —
