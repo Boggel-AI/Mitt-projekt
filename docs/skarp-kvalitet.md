@@ -293,7 +293,10 @@ priset som tak och redovisas som "minst X, högst Y". Logiska Lindo-anrop
 (ett per `*Logic`-anrop) räknas av evalen själv och jämförs med taket ~25
 (`mapCompetitors` körs inte i evalen men räknas in). Uppmätt i `--mock`
 utan följdfrågor: 17 logiska anrop mot `2d61206`, **18 i nuvarande
-version** (klassificeringen är det enda nya anropet). En följdfråga ger
+version** (klassificeringen är det enda nya anropet). Sedan
+`docs/skarp-flode.md` §0.20 är steg 1 två parallella anrop (speglingen och
+steg 2:s början) — ett logiskt anrop till; evalen kör det delade steg 1
+när koden har det (`compat.splitStep1`). En följdfråga ger
 ett svarsanrop till, och i steg 3 och 6 startar routen — och evalen, som
 speglar den — dessutom om insikten med följdsvaret; det ersatta
 insiktsanropet väntas aldrig in men är gjort och räknas. Med en följdfråga

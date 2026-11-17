@@ -235,6 +235,28 @@ tankeverktyg för frågorna, ingen psykologikunskapsbas, och den når
 användaren bara genom samtalsdesignen — en fråga, en spegling, en
 diskret perspektivetikett.
 
+## Skärp: en tidsbudget per anrop och ett delat steg 1 (felrapporten 2026-11-16)
+
+Pilotkörningen fastnade i steg 1 (svar efter ~80 s, Codespaces bröt efter
+~100 s, Lindo gav upp efter 60 s). Beslut, se `docs/skarp-flode.md` §0.20:
+
+- **En budget per serveranrop, inte per försök.** Alla försök i AI-lagret
+  (huvudmodell, Claude-reserv, OpenRouter, nytt varv, mjuk kontrollrunda)
+  delar stegets budget. Tidsgränsen per anrop kortas till det som
+  återstår, och ett försök som inte hinner startas inte. Klientens gräns
+  är alltid längre än serverns budget.
+- **Steg 1 i två parallella anrop** (speglingen först, steg 2:s början
+  medan användaren läser) — samma fält och instruktioner, ett logiskt
+  anrop till per session (21, 22 med ett tillägg).
+- **Hellre ett svar i tid än en extra kontrollrunda.** Den mjuka
+  kontrollens andra runda körs bara om den hinner; annars används svaret
+  som redan klarat de hårda reglerna, precis som när runda 2 misslyckas.
+- **Identiska förfrågningar slås ihop** och färdiga svar sparas i tio
+  minuter, så "Försök igen" aldrig gör kön längre. Researchen är ett jobb
+  som klienten frågar efter, så ingen förfrågan når proxyns gräns.
+- **Mätbarhet utan terminal:** `Server-Timing` på varje svar och en
+  `[skarp-tid]`-rad per anrop.
+
 ## Affärsmodell differentierad per målgrupp
 
 - Rådgivare/konsulter: licens per rådgivare, löpande.

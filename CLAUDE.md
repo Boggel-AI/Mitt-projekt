@@ -60,6 +60,20 @@ något". Ett tillägg kvitteras kort överst i steg 2 ("Uppfattat – jag tar
 med att …") och flödet går vidare; högst en rättelserunda, senare
 tillägg skrivs i nästa steg. Fakta/tolkning/hopp sorteras bara internt.
 
+**Tider (§0.20):** steg 1 görs i två parallella anrop — speglingen
+(`mirrorIdea`, det användaren väntar på, kommer på några sekunder) och
+steg 2:s början (`prepareWhyYou`: kvittensen, Lindos tankar, frågan,
+idémodellen), som tas fram medan användaren läser speglingen och väntas
+in vid "Ja, vidare"; tillägget kör det kombinerade `readIdea`. Varje
+serveranrop har en tidsbudget som alla försök delar
+(`src/lib/skarp/budgets.ts`) — tidsgränsen per anrop blir aldrig längre
+än det som återstår — och klienten väntar alltid längre än servern.
+Identiska förfrågningar slås ihop ("Försök igen" startar inget nytt
+anrop medan det första pågår), researchen är ett jobb som klienten frågar
+efter (inget når Codespaces gräns på ~100 s), varje svar har ett
+`Server-Timing`-huvud med tid och modell per AI-försök, och idéfältet
+sparas i webbläsaren.
+
 **Frågeregeln (§0.16):** varje fråga ska gå att svara på på tio sekunder
 utan research och utan kunskap om en viss person eller ett visst
 företag. Huvudformen är Lindos egen hypotes + reaktion ("Jag tror det
@@ -204,8 +218,8 @@ grunderna. Ett tyst klassificeringsanrop efter steg 1 bedömer idétyp,
 vad som redan är sagt (sagt är inte belagt), vad som är mest osäkert och
 avgörande och hur van användaren är, och vanlig kod väljer sedan
 deterministiskt vilka verktyg varje steg får i SKÄRPA-blocket.
-Anropsbudgeten är 20 logiska anrop utan följdfrågor (18 + två
-marknadsbilder), 21 med ett tillägg i steg 1, tak ~25. Frågan visar sitt
+Anropsbudgeten är 21 logiska anrop utan följdfrågor (19 + två
+marknadsbilder), 22 med ett tillägg i steg 1, tak ~25 (§0.20). Frågan visar sitt
 perspektiv som en diskret etikett, mjuka kontroller stoppar statistik,
 påhittade namn och siffror, platta grundfrågor, facktermer och avskrivna
 exempel, och kvalitetsevalen i `docs/skarp-kvalitet.md` mäter om det

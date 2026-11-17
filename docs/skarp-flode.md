@@ -10,7 +10,8 @@ flödet.
 
 Kompass-läget, designen, API-/AI-lagret (OpenRouter, reservkedjan, tålig
 JSON-tolkning, timeouts, cachen, loggningen) och affärsmodellen berörs INTE
-av detta dokument. Perplexity-providern och research-pipelinen har sedan
+av detta dokument — utom Skärp-anropens tidsbudget, dubblettskydd och
+tidsloggning (§0.20). Perplexity-providern och research-pipelinen har sedan
 §0.17 egna sökplaner för Skärps två körningar; Kompass anrop är oförändrade.
 
 Status: fas 3 — alla tio steg är ombyggda, i repot `gxy652fxr`
@@ -38,9 +39,15 @@ läget i branschen (nulägesanalys) i researchen och överst i steg 6, de
 fem P:na som täckning i idémodellen, "Första versionen" (MoSCoW) i
 testkortet och "Underlag för din rådgivare" (SWOT och de fem P:na) sist
 i slutkortet — byggt av det användaren sagt och det researchen hittat,
-utan nya anrop.
-**§0 gäller; §0.19 går före §0.18, som går före §0.17, som går före
-§0.16, som går före §0.15 och §0.14, som går före resten av §0.**
+utan nya anrop. **§0.20** (efter pilotkörningens felrapport 2026-11-16)
+rör bara tider, felhantering och sparande av inmatning: steg 1 i två
+parallella anrop (speglingen först, steg 2:s början medan användaren
+läser), en tidsbudget per serveranrop som alla försök delar, "Försök
+igen" utan dubbletter, researchen som jobb som tål Codespaces gräns,
+tidsloggning med Server-Timing och idéfältet sparat i webbläsaren.
+**§0 gäller; §0.20 går före §0.19, som går före §0.18, som går före
+§0.17, som går före §0.16, som går före §0.15 och §0.14, som går före
+resten av §0.**
 §1–§10 beskriver fas 1–2 och står kvar som historik; där de krockar med §0
 gäller §0.
 
@@ -726,7 +733,9 @@ användaren ser.
 | Anrop | Fil | `schemaName` / schema | Roll |
 | --- | --- | --- | --- |
 | `classifyIdea` | `knowledge/classify.ts` | `skarp_classify_idea` / `IdeaProfileSchema` | – (ingen röst) |
-| `readIdea` | `step1-idea.ts` | `skarp_read_idea` / `ReadIdeaSchema` | Spegeln |
+| `mirrorIdea` | `step1-idea.ts` | `skarp_mirror_idea` / `MirrorIdeaSchema` | Spegeln (§0.20) |
+| `prepareWhyYou` | `step1-idea.ts` | `skarp_prepare_why_you` / `PrepareWhyYouSchema` | Spegeln (§0.20) |
+| `readIdea` | `step1-idea.ts` | `skarp_read_idea` / `ReadIdeaSchema` | Spegeln (bara tillägget sedan §0.20) |
 | `answerWhyYou` | `step2-why.ts` | `skarp_why_you` / `WhyYouResultSchema` | Intervjuaren |
 | `answerCustomer` | `step3-customer.ts` | `skarp_customer` / `CustomerResultSchema` | Intervjuaren |
 | `answerProblem` | `step4-problem.ts` | `skarp_problem` / `ProblemResultSchema` | Intervjuaren |
@@ -2314,6 +2323,119 @@ Inget av de fyra ramverken har ett eget AI-anrop.
 - `RealityView`: läget överst.
 - `ClosingCard`: `FirstVersionBox`, `AdvisorBasisSection`.
 - `routes/skarp.tsx`.
+
+### 0.20 Tider, ett delat steg 1 och sparat idéfält (felrapporten 2026-11-16)
+
+Pilotkörningen 2026-11-16 fastnade i steg 1: `readIdea` svarade efter
+cirka 80 s (504 från Codespaces efter cirka 100 s i tre försök), medan
+Lindo gav upp efter 60 s och slängde svaret när det väl kom. "Försök igen"
+startade ett nytt `readIdea` medan det gamla fortsatte. Orsaken var
+tiderna, inte innehållet: varje försök i AI-lagret hade en egen gräns (20 s
+per Claude-anrop, sedan Haiku, OpenRouter, ett nytt varv och en mjuk
+kontrollrunda), och ingen del kände till klientens 60 s eller Codespaces
+100 s. Samtidigt hade steg 1:s svar vuxit sedan oktober (steg 2:s
+kvittens, kortkandidaterna, frågan och idémodellen med de fem P:na).
+Vägledningens innehåll, frågor och steg är oförändrade. Det här avsnittet
+rör bara tider, felhantering och sparande av inmatning.
+
+1. **Steg 1 i två anrop.** När idén skickas körs två anrop parallellt.
+   Båda har samma fält och ordagrant samma instruktioner som det
+   kombinerade anropet (kontrollerat mot prompten före delningen):
+   - `mirrorIdea` — speglingen: `mirror`, `ideaShort`, `ideaShortQuote`
+     och `notes`. Användaren väntar bara på den (och kartan), och den
+     kommer på några sekunder.
+   - `prepareWhyYou` — steg 2:s början: `bridge`, kortkandidaterna,
+     `nextQuestion` och idémodellen. Den tas fram medan användaren läser
+     speglingen och väntas in vid "Ja, vidare". Är den inte klar visas
+     steg 2:s laddningstext, och ett misslyckat försök i bakgrunden görs
+     om då i stället för att visas som ett fel. Idémodellens första
+     version slås in vid "Ja, vidare".
+
+   "Lägg till något" kör det kombinerade anropet (`readIdea` med
+   `correction`) som förut. **Budgeten: 21 logiska anrop utan
+   följdfrågor (19 + två marknadsbilder), 22 med ett tillägg i steg 1;
+   taket är omkring 25.**
+2. **En tidsbudget per serveranrop** som ALLA försök delar
+   (`SERVER_BUDGET_MS` i `src/lib/skarp/budgets.ts`):
+
+   | Anrop | Budget |
+   | --- | --- |
+   | Speglingen och kartan | 25 s |
+   | Steg 2:s början och tillägget | 45 s |
+   | Steg 2–10 | 45 s |
+   | Steg 6:s två anrop | 48 s |
+   | Insikten | 35 s |
+   | Klassificeringen | 16 s |
+
+   Inom budgeten gäller:
+   - Tidsgränsen per anrop (`ANTHROPIC_TIMEOUT_MS` m.fl.) kortas till det
+     som återstår av budgeten, minus en reserv åt Claude-reserven. Reserven
+     är högst 12 s och högst 40 % av det som återstår.
+   - OpenRouter provas bara om minst 15 s återstår.
+   - Ett nytt varv (`generateValidated`) körs bara om minst 10 s återstår.
+   - Den mjuka kontrollens andra runda körs bara om den hinner, det vill
+     säga om minst lika lång tid återstår som första rundan tog. Annars
+     används svaret som redan klarat de hårda reglerna.
+
+   Servern svarar alltså, eller ger ett tydligt fel, inom budgeten.
+3. **Klientens gränser är längre än serverns** (`CLIENT_TIMEOUT_MS`):
+   60 s per steg, 45 s för en insikt och 20 s för klassificeringen. Lindo
+   ger aldrig upp på ett svar som är på väg, och ingen förfrågan når
+   Codespaces gräns.
+4. **"Försök igen" utan dubbletter.** Servern slår ihop identiska
+   förfrågningar (samma anrop och samma data):
+   - En förfrågan medan den första pågår hänger på samma körning.
+   - Ett färdigt svar sparas i tio minuter.
+   - Ett misslyckat anrop sparas aldrig.
+
+   Undantaget är insikten, där "Leta en gång till" ska ge ett nytt svar.
+   I steg 1 återanvänder klienten också ett pågående anrop för speglingen,
+   kartan och steg 2:s början.
+5. **Researchen som jobb.** `prepareMarket` startar körningen som ett jobb
+   i serverns minne och svarar inom 45 s med "klar" eller "pågår".
+   Klienten frågar igen tills jobbet är klart, i högst 5 minuter.
+   - En fråga om samma körning hänger alltid på jobbet. Ett avbrott
+     (502/504) förbrukar alltså inte sessionens två körningar och startar
+     ingen ny sökning.
+   - Kondenseringen har en egen budget på 60 s.
+   - Steg 6 väntar på researchen bara så länge att stegets eget AI-anrop
+     hinner: 30 s av budgeten lämnas åt anropet.
+6. **Tidsloggning.** Varje serveranrop ger en rad i serverloggen, till
+   exempel `[skarp-tid] mirrorIdea 4210 ms (budget 25000 ms) · svar från
+   claude-sonnet-5-5 · försök: …`. Varje svar har också ett
+   `Server-Timing`-huvud med de här posterna:
+   - `total`: anropets namn, ok/fel, budget, och "delad" eller "cache"
+     när svaret kom från dubblettskyddet.
+   - `ai1`, `ai2` …: schema, modell, ok/timeout/schema/fel och tid.
+   - `wait1` …: väntan, till exempel på marknadsjobbet.
+   - `note`: överhoppade rundor.
+   - `research` och `kond`: finns när ett marknadsjobb är klart.
+7. **Idéfältet sparas** i webbläsaren (`localStorage`, nyckeln
+   `lindo_skarp_idea_draft`) medan användaren skriver. Det återställs
+   efter en omladdning och rensas när slutkortet är klart. Hela sessionen
+   sparas inte än; det blir en separat ändring.
+
+**Konstruktion (`gxy652fxr`).**
+- `ai/budget.ts` (ny, klientsäker): budgeten, försöken, väntan,
+  tidsraden.
+- `ai/budget.server.ts` (ny, importeras bara inne i serveranropens
+  handlers): AsyncLocalStorage och `runStep` (budget, dubblettskydd,
+  Server-Timing).
+- `ai/providers/*`: tidsgränsen per försök, reserven, försöken noteras.
+- `ai/index.ts`: `generateValidated` hoppar över ett varv som inte hinner.
+- `skarp/validators.ts`: `generateSkarp` hoppar över en mjuk runda som
+  inte hinner.
+- `skarp/budgets.ts` (ny): `SERVER_BUDGET_MS`, `CLIENT_TIMEOUT_MS`.
+- `skarp/schemas.ts`: `MirrorIdeaSchema`, `PrepareWhyYouSchema` (samma
+  fält som `ReadIdeaSchema`).
+- `skarp/step1-idea.ts`: `mirrorIdea`, `prepareWhyYou`, instruktionerna i
+  delar.
+- `skarp/research.ts`: marknadsjobben, `contextFindings` inom budgeten.
+- Alla stegs serveranrop: `runStep`.
+- `routes/skarp.tsx`: steg 1 i två anrop, "Ja, vidare" väntar in steg 2:s
+  början, pollningen av marknadsjobbet, idéfältet i `localStorage`,
+  klientens gränser.
+- Skripten: flödestestet, evalrunnern, röktestet och kunskapstestet.
 
 Kompass-koden är orörd.
 
