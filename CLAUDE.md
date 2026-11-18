@@ -74,6 +74,30 @@ efter (inget når Codespaces gräns på ~100 s), varje svar har ett
 `Server-Timing`-huvud med tid och modell per AI-försök, och idéfältet
 sparas i webbläsaren.
 
+**Claude måste fungera (§0.21):** Skärp kör BARA Claude — huvudmodellen
+och sedan Claude-reserven. OpenRouters gratismodeller är avstängda för
+Skärp (`SKARP_ALLOW_OPENROUTER=true` slår på dem); Kompass har kvar sin
+kedja. Leverantörens faktiska fel ("401 authentication_error: invalid
+x-api-key") syns i `[skarp-tid]` och i `Server-Timing`.
+- **Hälsokontrollen** körs vid serverstart (`[halsa]`-raden) och svarar på
+  `GET /api/halsa`.
+- **Fel som inte går att lösa genom att försöka igen** stänger av det de
+  gäller i fem minuter: 401, 403 och krediter hela leverantören, 404
+  modellen, övriga 400 anropstypen.
+- **Ett serveranrop** gör högst fyra AI-försök.
+- **Når Lindo inte Claude** får användaren ett tydligt fel direkt.
+- **Svenska alltid:** svar som tydligt inte är på svenska underkänns och
+  får en ny chans inom budgeten.
+- **Inget steg väntar** på det som inte visas just då. Speglingen väntar
+  inte på kartan, steg 6 inte på konkurrentkartan och slutkortet bara
+  kort på insikten.
+- **Den breda researchen** är två parallella agentkörningar ("marknad" och
+  "omvarld", högst 8 steg var).
+- **Steg 6 väntar in den riktade researchen** (högst 90 s, med
+  laddningstext).
+
+Mät med `npm run skarp:matning -- "idé"`.
+
 **Frågeregeln (§0.16):** varje fråga ska gå att svara på på tio sekunder
 utan research och utan kunskap om en viss person eller ett visst
 företag. Huvudformen är Lindos egen hypotes + reaktion ("Jag tror det

@@ -257,6 +257,27 @@ Pilotkörningen fastnade i steg 1 (svar efter ~80 s, Codespaces bröt efter
 - **Mätbarhet utan terminal:** `Server-Timing` på varje svar och en
   `[skarp-tid]`-rad per anrop.
 
+## Skärp: bara Claude, fel som syns och inga försök i onödan (Coworks mätning 2026-11-17)
+
+En ogiltig ANTHROPIC_API_KEY gav 401 i varje anrop. Ingen märkte det,
+eftersom kedjan tyst föll till OpenRouters gratismodeller: långsamma, ofta
+på engelska och med gränser för antalet anrop. Beslut, se
+`docs/skarp-flode.md` §0.21:
+
+- **Skärp kör bara Claude** (huvudmodellen och sedan Claude-reserven).
+  OpenRouter stängs av för Skärp via konfiguration och behålls för Kompass.
+  Ett tydligt fel är bättre än ett långsamt svar på engelska.
+- **Fel som inte går att lösa genom att försöka igen** (fel nyckel,
+  krediter, modellen finns inte, ogiltig begäran) stänger av det de gäller
+  en stund i stället för att försökas om. Varje serveranrop har ett tak på
+  antalet AI-försök.
+- **En hälsokontroll vid start**, och leverantörens faktiska fel i varje
+  loggrad och i Server-Timing, så att ett nyckelfel syns på sekunder.
+- **Svenska kontrolleras i kod**, och ett svar som inte är på svenska visas
+  aldrig.
+- **Den breda researchen körs som två parallella halvor**, så att alla
+  sökvinklar finns kvar men väntan halveras ungefär.
+
 ## Affärsmodell differentierad per målgrupp
 
 - Rådgivare/konsulter: licens per rådgivare, löpande.

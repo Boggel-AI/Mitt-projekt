@@ -11,7 +11,8 @@ flödet.
 Kompass-läget, designen, API-/AI-lagret (OpenRouter, reservkedjan, tålig
 JSON-tolkning, timeouts, cachen, loggningen) och affärsmodellen berörs INTE
 av detta dokument — utom Skärp-anropens tidsbudget, dubblettskydd och
-tidsloggning (§0.20). Perplexity-providern och research-pipelinen har sedan
+tidsloggning (§0.20) och Skärp-kedjan, felhanteringen och hälsokontrollen
+(§0.21). Perplexity-providern och research-pipelinen har sedan
 §0.17 egna sökplaner för Skärps två körningar; Kompass anrop är oförändrade.
 
 Status: fas 3 — alla tio steg är ombyggda, i repot `gxy652fxr`
@@ -45,9 +46,14 @@ parallella anrop (speglingen först, steg 2:s början medan användaren
 läser), en tidsbudget per serveranrop som alla försök delar, "Försök
 igen" utan dubbletter, researchen som jobb som tål Codespaces gräns,
 tidsloggning med Server-Timing och idéfältet sparat i webbläsaren.
-**§0 gäller; §0.20 går före §0.19, som går före §0.18, som går före
-§0.17, som går före §0.16, som går före §0.15 och §0.14, som går före
-resten av §0.**
+**§0.21** (efter Coworks mätning 2026-11-17) gör att felen syns: varje
+leverantörsfel loggas, en hälsokontroll körs vid start, fel som inte går
+att lösa stänger av leverantören en stund, Skärp kör bara Claude (inga
+gratismodeller), allt som visas är på svenska, inget väntar på det som
+inte visas, och den breda researchen är två parallella halvor.
+**§0 gäller; §0.21 går före §0.20, som går före §0.19, som går före
+§0.18, som går före §0.17, som går före §0.16, som går före §0.15 och
+§0.14, som går före resten av §0.**
 §1–§10 beskriver fas 1–2 och står kvar som historik; där de krockar med §0
 gäller §0.
 
@@ -2437,7 +2443,118 @@ rör bara tider, felhantering och sparande av inmatning.
   klientens gränser.
 - Skripten: flödestestet, evalrunnern, röktestet och kunskapstestet.
 
-Kompass-koden är orörd.
+### 0.21 Claude måste fungera: felen syns, inga gratismodeller, svenska alltid (Coworks mätning 2026-11-17)
+
+Coworks mätning efter §0.20 visade att Lindo inte var redo:
+- Alla anrop till Claude gav "fel" efter 140–200 ms. Orsaken var en ogiltig
+  ANTHROPIC_API_KEY (401), inte anropet: förfrågan till Anthropic var byte
+  för byte densamma som före §0.20.
+- Kedjan föll tyst till OpenRouters gratismodeller. De var långsamma (20–45 s),
+  svarade ofta på engelska och slutade svara efter ungefär åtta minuter.
+- Speglingen väntade på kartan, och konkurrentkartan gjorde 19 försök i ett
+  enda anrop.
+- Den breda researchen tog cirka 140 s.
+
+Vägledningens innehåll, frågor och steg är oförändrade.
+
+1. **Felen syns.** Varje AI-försök noterar leverantörens faktiska fel, till
+   exempel "401 authentication_error: invalid x-api-key". Felet syns i
+   `[skarp-tid]`-raden och i `Server-Timing`, där `aiN` beskriver försöket
+   och `error` hela felet.
+2. **En hälsokontroll vid serverstart.** I Node görs ett minimalt anrop till
+   Claude-huvudmodellen och Claude-reserven, och resultatet skrivs som en rad:
+   `[halsa] Claude OK — …` eller `[halsa] Claude FEL — <modell>: <fel>`.
+   `GET /api/halsa` visar läget som JSON; `?nu=1` kör om kontrollen.
+3. **Inga överflödiga försök.** Fel som inte går att lösa genom att försöka
+   igen stänger av det de gäller i fem minuter, och under tiden görs inga nya
+   anrop dit:
+   - 401, 403 och slut på krediter stänger av hela leverantören. Därför
+     provas inte heller Claude-reserven, eftersom den använder samma nyckel.
+   - 404 stänger av modellen.
+   - Ett annat 400 stänger av modellen för den anropstypen.
+
+   Ett serveranrop gör högst fyra AI-försök totalt, alla reserver, rundor och
+   delanrop inräknade. Konkurrentkartan delar inte upp sin batch när AI:n inte
+   nås. En lyckad hälsokontroll häver avstängningen.
+4. **Inga gratismodeller i Skärp.** Skärp-kedjan är Claude-huvudmodellen och
+   sedan Claude-reserven, inget mer. OpenRouter finns kvar i koden och kan slås
+   på för Skärp med `SKARP_ALLOW_OPENROUTER=true`. Kompass har kvar sin kedja
+   med OpenRouter.
+   - Utan ANTHROPIC_API_KEY körs mock om `AI_PROVIDER=mock`, annars ger
+     Skärp-anropen ett tydligt fel.
+   - Når Lindo inte Claude får användaren direkt (cirka 0,1 s) beskedet "Jag
+     når inte min AI just nu — ett tekniskt fel hos oss, inte något du har
+     gjort. Det du har skrivit finns kvar; försök igen om en stund."
+5. **Svenska alltid.** En enkel kontroll av allt användaren kan se i ett svar
+   (`languageProblem`) underkänner svar som tydligt är på engelska. Kontrollen
+   jämför engelska och svenska småord, och korta etiketter, namn och citat
+   räknas inte. Modellen får en ny chans inom budgeten med "skriv på svenska".
+   Är svaret ändå inte på svenska visas det aldrig; steget ger i stället ett
+   fel och användaren kan försöka igen.
+6. **Inget väntar på det som inte visas.**
+   - "Har jag fattat rätt?" visas så fort speglingen är klar. Kartan fylls i
+     när den kommer; misslyckas den görs ett nytt försök i bakgrunden, och
+     annars visas steget utan karta, aldrig med ett fel.
+   - Steg 6 visas när `buildReality` är klar, och konkurrentkartan i railen
+     fylls i efteråt med samma nummer.
+   - Slutkortet väntar högst 4 s extra på insikten och fyller sedan i den när
+     den kommer.
+   - Misslyckas klassificeringen används ingen profil, alltså samma neutrala
+     urval som före klassificeringen.
+7. **Researchen.** Den breda körningen är två parallella agentkörningar med
+   högst 8 steg var, i stället för en med 15. Alla sju vinklarna finns kvar:
+   - "marknad": direkta konkurrenter, indirekta alternativ, svensk och nordisk
+     marknad, och konkurrenternas egna sajter.
+   - "omvarld": hur målgruppen pratar, misslyckade försök, läget i branschen,
+     och priser och köp.
+
+   Fynden slås ihop och kondenseras i ett anrop, bara av Claude. Väntan blir
+   den längsta av halvorna i stället för summan. Steg 6 väntar in den riktade
+   körningen, och den breda om den inte är klar, i högst 90 s med texten
+   "Väntar in det sista från sökningen …".
+
+   En sökning som misslyckades ser inte längre ut som "hittade inget".
+   Researchlagret skiljer på tomt, fel och tidsgräns, och steg 6 säger då
+   "Sökningen på nätet fungerade inte den här gången …". Varje anrop till
+   Perplexity har ett yttersta tak på 150 s.
+8. **Skripten.**
+   - `npm run ai:smoke` (röktestet) börjar med hälsokontrollen och avbryter
+     direkt med felet om Claude inte svarar. Varje anrop körs med
+     produktionens budget, högst tre samtidigt, och resultatet skrivs ut
+     löpande. Röktestet hängde tidigare för att det inte skrev ut något förrän
+     alla anrop var klara, och anropen föll då till gratismodellerna.
+   - `npm run skarp:matning -- "idé"` kör hela flödet med riktiga anrop genom
+     produktionens budgetar och kör steg 1 tre gånger först. Per anrop skrivs
+     tid, modell, utfall, fel, andel av budgeten och om svaret var på svenska.
+     Till sist bedöms kriterierna (a) speglingen under 10 s i tre av tre
+     körningar, (b) svaren från Sonnet, (c) inget anrop över 70 % av budgeten,
+     (d) allt på svenska och (e) marknadsbilden klar vid steg 6 — GODKÄNT
+     eller EJ GODKÄNT med skäl.
+
+**Konstruktion (`gxy652fxr`).**
+- `ai/errors.ts` (ny): felklassningen, avstängningen och felklasserna.
+- `ai/health.server.ts` (ny): hälsokontrollen.
+- `routes/api/halsa.ts` (ny): `GET /api/halsa`.
+- `server.ts`: hälsokontrollen vid start.
+- `ai/providers/anthropic.server.ts`: avstängning, försöksplatser och faktiska
+  fel.
+- `ai/providers/unavailable.server.ts` (ny).
+- `ai/index.ts`: Skärp-profilen och kedjan, och `generateValidated` försöker
+  inte om efter sådana fel.
+- `ai/budget.ts`: försökstaket och felen i loggen och i Server-Timing.
+- `skarp/validators.ts`: `languageProblem`, och `generateSkarp` går genom
+  Skärp-kedjan.
+- `research/plans.ts`: "marknad" och "omvarld".
+- `research/index.ts`: `researchDetailed`.
+- `research/perplexity-agent.server.ts`: taket på 150 s.
+- `skarp/research.ts`: `researchForRun` och `searchError`.
+- `skarp/step6-reality.ts` och `step1-idea.ts`: Skärp-kedjan och
+  språkkontrollen.
+- `routes/skarp.tsx` och `RealityView`.
+- Skripten: röktestet, mätskriptet i flödestestet, researchtestet och
+  kunskapstestet.
+
+Kompass-koden är orörd; Kompass har kvar sin AI-kedja.
 
 ## 1. Principerna, kort
 
