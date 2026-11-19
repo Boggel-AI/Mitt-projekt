@@ -11,8 +11,8 @@ flödet.
 Kompass-läget, designen, API-/AI-lagret (OpenRouter, reservkedjan, tålig
 JSON-tolkning, timeouts, cachen, loggningen) och affärsmodellen berörs INTE
 av detta dokument — utom Skärp-anropens tidsbudget, dubblettskydd och
-tidsloggning (§0.20) och Skärp-kedjan, felhanteringen och hälsokontrollen
-(§0.21). Perplexity-providern och research-pipelinen har sedan
+tidsloggning (§0.20), Skärp-kedjan, felhanteringen och hälsokontrollen
+(§0.21) och schemanas läge, strikt eller JSON (§0.22). Perplexity-providern och research-pipelinen har sedan
 §0.17 egna sökplaner för Skärps två körningar; Kompass anrop är oförändrade.
 
 Status: fas 3 — alla tio steg är ombyggda, i repot `gxy652fxr`
@@ -51,9 +51,12 @@ leverantörsfel loggas, en hälsokontroll körs vid start, fel som inte går
 att lösa stänger av leverantören en stund, Skärp kör bara Claude (inga
 gratismodeller), allt som visas är på svenska, inget väntar på det som
 inte visas, och den breda researchen är två parallella halvor.
-**§0 gäller; §0.21 går före §0.20, som går före §0.19, som går före
-§0.18, som går före §0.17, som går före §0.16, som går före §0.15 och
-§0.14, som går före resten av §0.**
+**§0.22** (efter ai:smoke 2026-11-19) skickar de största svarsschemana som
+icke-strikt JSON med validering i koden, eftersom Anthropic vägrade dem i
+strikt läge. Röktestet prövar alla scheman med full kontext.
+**§0 gäller; §0.22 går före §0.21, som går före §0.20, som går före §0.19,
+som går före §0.18, som går före §0.17, som går före §0.16, som går före
+§0.15 och §0.14, som går före resten av §0.**
 §1–§10 beskriver fas 1–2 och står kvar som historik; där de krockar med §0
 gäller §0.
 
@@ -2555,6 +2558,94 @@ Vägledningens innehåll, frågor och steg är oförändrade.
   kunskapstestet.
 
 Kompass-koden är orörd; Kompass har kvar sin AI-kedja.
+
+### 0.22 Scheman som Anthropic kan ta emot, och ett röktest med full kontext (ai:smoke 2026-11-19)
+
+Mätningen efter §0.21 visade att Claude svarade snabbt och på svenska
+(speglingen på 3,7–4,8 s i tre av tre körningar, allt från Sonnet), men
+att flödet stoppade i steg 2. Anthropic vägrade tre svarsscheman i strikt
+läge, både för Sonnet och Haiku:
+- `skarp_why_you` och `skarp_problem`: "The compiled grammar is too large".
+- `skarp_customer`: "too many parameters with union types (19 …)".
+
+Lösningskärnan (`skarp_mechanism`) fick dessutom timeout: Sonnet hade 33 s
+kvar inom 45 s efter att Claude-reservens del räknats bort.
+
+Orsaken var schemanas storlek, inte innehållet. De fem P:na i idémodellen
+(§0.19) gjorde de största schemana för stora för Anthropics strukturerade
+output. Vägledningens innehåll, frågor, steg och anropsbudget är
+oförändrade.
+
+1. **Två lägen per schema.** Små scheman skickas som förut, strikt
+   (`output_config.format`). Stora scheman skickas som **icke-strikt JSON**:
+   - schemat står i systemprompten efter stegets egen prompt, som
+     "SVARSFORMAT";
+   - svaret tolkas och valideras mot samma zod-schema i koden;
+   - fel form ger samma enda nya försök med återkoppling som i strikt läge.
+
+   Koden städar bara formellt: saknade nullbara fält blir null och
+   avslutande kommatecken tas bort. Inget innehåll kortas eller läggs
+   till. De mjuka kontrollerna prövar texterna precis som förut.
+2. **Gränsen räknas i kod** (`ai/schema-complexity.ts`): antal fält, fält
+   med union, valfria fält och schemats storlek i tecken. Gränserna är
+   uppskattade ur det som gick igenom och det som vägrades. Antalet unions
+   har Anthropics dokumenterade gräns 16, och för grammatikens storlek
+   finns ingen publicerad gräns. Ett schema skickas strikt bara om det
+   ligger under 80 % av alla gränser.
+   - Nu går sex scheman som JSON: `read_idea`, `why_you`, `customer`,
+     `problem`, `reality_answer` och `unique`.
+   - Övriga 13 går strikt.
+3. **Vägrar Anthropic ändå ett strikt schema**, byter anropet direkt till
+   JSON-läge, och schemat går som JSON resten av serverns liv. Det stänger
+   inte av nyckeln eller modellen.
+4. **Lösningskärnan får en egen budget**, 55 s på servern och 70 s i
+   klienten. Det är fortfarande långt under Codespaces gräns på cirka
+   100 s.
+5. **Schematestet** `npm run skarp:scheman` skriver ut måtten per schema och
+   underkänner när
+   - ett schema byter läge jämfört med den förväntade listan,
+   - ett redan vägrat schema skulle gå strikt, eller
+   - ett schema i koden saknas i testet.
+
+   Det slår larm när ett strikt schema ligger på 70 % av en gräns.
+6. **Röktestet är fullständigt** (`npm run ai:smoke`): ett riktigt anrop
+   per schema, 21 anrop för alla 19 scheman, genom samma kod som appen.
+   - Kontexten är en påhittad session som har det en riktig session hunnit
+     samla vid varje steg (cirka 6 000–16 000 tecken): idémodellen med de
+     fem P:na och första kundgruppen, marknadsbilden från båda körningarna,
+     personprofilen, Lindos tidigare kort och insikterna.
+   - Steg 6 och konkurrentkartan läser marknadsbilden, och marknadsbildens
+     kondensering körs på påhittade fynd. Ingen sökning görs.
+   - Röktestet skriver ut en rad per anrop och en tabell per schema: OK/FEL,
+     läge, modell, tid, andel av budgeten, svenska och kontextens storlek.
+7. **Mätskriptet skiljer på underkänt och ej nått.** Varje steg 1–10 får
+   OK, FEL eller "ej nådd". Ett steg som flödet aldrig kom till är inte
+   underkänt. Har inget underkänts men flödet stoppat blir beskedet
+   "INTE KOMPLETT".
+8. **Mindre rättelser.**
+   - Marknadsbildens namnkontroll är skiftlägesokänslig och tål små
+     stavningsskillnader, till exempel "ASKET" mot "Askets", ett tecken fel
+     eller namnet i länkens domän.
+   - Den breda researchens två halvor startar med 3 s mellanrum, efter
+     HTTP 429 från Perplexity vid samtidig start.
+   - Kravet "EXAKT EN mening" på Lindos kort är tydligare i prompten, så att
+     det inte kostar en extra runda.
+
+**Konstruktion (`gxy652fxr`).**
+- `ai/schema-complexity.ts` (ny).
+- `ai/providers/anthropic.server.ts`: JSON-läget, bytet vid vägran och
+  `parseJsonAnswer`.
+- `ai/errors.ts`: `JsonAnswerError` och `isSchemaTooComplex`.
+- `skarp/budgets.ts` och `step7-mechanism.ts`: lösningskärnans budget.
+- `routes/skarp.tsx`: klientens gräns för lösningskärnan.
+- `skarp/research.ts`: namnkontrollen och mellanrummet mellan halvorna.
+- `skarp/sharp.ts`: kortkravet.
+- Skripten: `skarp-schema-test.ts` (ny), `ai-smoke-test.ts`,
+  `fixtures/skarp-session.ts` (ny), `fixtures/skarp-schemas.ts` (ny) och
+  mätskriptet i `skarp-flow-test.ts`.
+
+Kompass-koden är orörd. OpenAI-kompatibla leverantören (Kompass och
+OpenRouter) har redan sin egen JSON-tolkning och påverkas inte.
 
 ## 1. Principerna, kort
 

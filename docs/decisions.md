@@ -257,6 +257,25 @@ Pilotkörningen fastnade i steg 1 (svar efter ~80 s, Codespaces bröt efter
 - **Mätbarhet utan terminal:** `Server-Timing` på varje svar och en
   `[skarp-tid]`-rad per anrop.
 
+## Skärp: stora scheman som icke-strikt JSON (ai:smoke 2026-11-19)
+
+Anthropic vägrade tre Skärp-scheman i strikt läge efter att de fem P:na
+lagts till i idémodellen. Felen var "The compiled grammar is too large" och
+"too many parameters with union types". Alternativen var att bryta ut
+idémodellen till ett eget anrop (fler anrop och längre väntan), att platta
+till schemana (påverkar promptar och kod i alla steg), eller att skicka de
+största som icke-strikt JSON. Beslut, se `docs/skarp-flode.md` §0.22:
+
+- **Icke-strikt JSON för stora scheman**, med samma zod-validering i koden
+  och ett nytt försök med återkoppling vid fel form. Det ändrar ingenting i
+  vägledningen och inget i anropsbudgeten.
+- **Gränsen räknas i kod**, med 20 % marginal. Ett test larmar när ett
+  schema närmar sig gränsen eller byter läge.
+- **Vägrar Anthropic ändå ett schema**, byter anropet till JSON i stället
+  för att stänga av modellen.
+- **Röktestet prövar alla scheman med realistiskt stor kontext**, eftersom
+  felet bara syntes med en full session.
+
 ## Skärp: bara Claude, fel som syns och inga försök i onödan (Coworks mätning 2026-11-17)
 
 En ogiltig ANTHROPIC_API_KEY gav 401 i varje anrop. Ingen märkte det,

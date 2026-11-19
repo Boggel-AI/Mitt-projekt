@@ -96,7 +96,16 @@ x-api-key") syns i `[skarp-tid]` och i `Server-Timing`.
 - **Steg 6 väntar in den riktade researchen** (högst 90 s, med
   laddningstext).
 
-Mät med `npm run skarp:matning -- "idé"`.
+**Scheman (§0.22):** stora svarsscheman skickas som icke-strikt JSON
+(schemat i prompten, validering mot samma zod-schema i koden), eftersom
+Anthropic vägrade dem i strikt läge ("compiled grammar is too large", fler
+än 16 fält med union). Gränsen räknas i `src/lib/ai/schema-complexity.ts`.
+Vägrar Anthropic ändå ett strikt schema byter anropet direkt till JSON.
+`npm run skarp:scheman` larmar när ett schema närmar sig gränsen eller byter
+läge — kör det när ett schema ändras.
+
+Mät med `npm run skarp:matning -- "idé"`. Pröva alla scheman med full
+kontext med `npm run ai:smoke`.
 
 **Frågeregeln (§0.16):** varje fråga ska gå att svara på på tio sekunder
 utan research och utan kunskap om en viss person eller ett visst
