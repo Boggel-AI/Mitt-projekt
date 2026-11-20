@@ -2746,6 +2746,21 @@ Vägledningens innehåll och frågor är oförändrade.
      utan stegets budget (tak 120 s). Det skriver tid, utdata-tokens,
      tänkande och vilka fält som står för mest av det synliga svaret.
 
+**Rättelser efter mätningen med riktiga anrop (2026-11-20, GODKÄNT).**
+- **Konkurrentkartan blev tom.** Kartan matchade bara mot de råa fynden, medan
+  modellen också såg marknadsbilden, och "H&M" har inga ord kvar efter
+  normaliseringen. Nu bygger kartan på samma underlag som marknadsbilden: dess
+  direkta och indirekta konkurrenter först, sedan körningarnas fynd
+  (`competitorPool`). Namn utan ord matchas på hela namnet eller på domänen
+  (`competitorNameFits`). Ett påhittat namn stryks i koden i stället för att
+  underkänna svaret, och fler än åtta godtas av schemat; koden behåller de åtta
+  mest relevanta (`settleCompetitorPlacements`). Kompass schema är oförändrat.
+- **Situationssatsen blev trasig svenska.** Delarna klistrades in i mallen "När
+  … befinner sig i …" med stor bokstav och dubbla ord. Nu skriver Claude satsen
+  som en färdig mening (`situationSentence` i steg 3:s anrop); saknas den
+  används kortformen med användarens ord. Satsen visas i slutkortets
+  kundrad och följer med i kontexten och den riktade researchen.
+
 **Konstruktion (`gxy652fxr`).**
 - `ai/effort.ts` (ny): nivån, modellerna som tar emot den och fältstorlekarna.
 - `ai/providers/anthropic.server.ts`: nivån, tokens per försök och kompakt
