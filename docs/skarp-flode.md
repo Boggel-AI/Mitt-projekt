@@ -54,9 +54,13 @@ inte visas, och den breda researchen är två parallella halvor.
 **§0.22** (efter ai:smoke 2026-11-19) skickar de största svarsschemana som
 icke-strikt JSON med validering i koden, eftersom Anthropic vägrade dem i
 strikt läge. Röktestet prövar alla scheman med full kontext.
-**§0 gäller; §0.22 går före §0.21, som går före §0.20, som går före §0.19,
-som går före §0.18, som går före §0.17, som går före §0.16, som går före
-§0.15 och §0.14, som går före resten av §0.**
+**§0.23** (efter ai:smoke 2026-11-20) gör svaren snabbare. Skärp skickar
+nivån "low" för Claudes tänkande, idémodellen är en ändring som tas fram i
+ett eget litet anrop i bakgrunden efter steg 2, 3, 4 och 6, regler om antal
+meningar ger ingen ny runda, och Haiku får 20 s som reserv.
+**§0 gäller; §0.23 går före §0.22, som går före §0.21, som går före §0.20,
+som går före §0.19, som går före §0.18, som går före §0.17, som går före
+§0.16, som går före §0.15 och §0.14, som går före resten av §0.**
 §1–§10 beskriver fas 1–2 och står kvar som historik; där de krockar med §0
 gäller §0.
 
@@ -2363,7 +2367,8 @@ rör bara tider, felhantering och sparande av inmatning.
    "Lägg till något" kör det kombinerade anropet (`readIdea` med
    `correction`) som förut. **Budgeten: 21 logiska anrop utan
    följdfrågor (19 + två marknadsbilder), 22 med ett tillägg i steg 1;
-   taket är omkring 25.**
+   taket är omkring 25.** (Sedan §0.23: 25, 26 och omkring 29 — fyra små
+   bakgrundsanrop för idémodellen.)
 2. **En tidsbudget per serveranrop** som ALLA försök delar
    (`SERVER_BUDGET_MS` i `src/lib/skarp/budgets.ts`):
 
@@ -2646,6 +2651,118 @@ oförändrade.
 
 Kompass-koden är orörd. OpenAI-kompatibla leverantören (Kompass och
 OpenRouter) har redan sin egen JSON-tolkning och påverkas inte.
+
+### 0.23 Snabbare svar: kort tänkande, idémodellen i bakgrunden, inga meningsrundor (ai:smoke 2026-11-20)
+
+Röktestet efter §0.22 gav 17 av 21 OK, allt på svenska och inga schemafel.
+Men fyra anrop fick timeout för både Sonnet (33 s) och Haiku (12 s):
+`skarp_why_you`, `skarp_customer`, `skarp_problem` och
+`skarp_reality_answer`. Lösningskärnan tog dessutom 42 s (77 %) och
+slutkortets bedömning 32 s (72 %), och flera steg fick en extra runda för
+"ska vara EN mening, inte 2". Målet är att varje anrop som användaren
+väntar på normalt tar under cirka 20 s med Sonnet och alltid ligger under
+60 % av budgeten, utan längre tidsgränser.
+
+**Orsaken: dolt tänkande.** Sonnet 5.5 tänker adaptivt på nivån "high" när
+anropet inte säger något annat. Tänkandet räknas och tar tid som utdata,
+även när texten inte visas. Loggarna från röktestet 2026-11-18 visar det:
+- rådet skrev cirka 500 synliga tokens men 3 281 utdata-tokens på 27 s;
+- steg 6:s svar cirka 1 250 synliga av 3 749 tokens på 30 s;
+- kartans axlar cirka 200 synliga av 721 tokens.
+
+Vägledningens innehåll och frågor är oförändrade.
+
+1. **Kort tänkande i Skärp.** Alla Skärp-anrop skickar nivån "low", vilket
+   Anthropic rekommenderar för innehåll och extraktion: modellen tänker kort
+   och hoppar över tänkandet på det mesta.
+   - `SKARP_EFFORT` styr nivån: `low` (standard), `medium`, `high`, eller
+     `standard` för modellens eget val.
+   - Bara modeller som tar emot nivån får den. Haiku 4.5 tänker inte som
+     standard och får den inte.
+   - Vägrar en modell nivån görs samma anrop utan den, och nivån skickas
+     inte dit igen.
+   - Kompass berörs inte.
+2. **Idémodellen som ändringar.** Claude skriver bara det som är nytt:
+   - en roll bara när svaret ändrar den;
+   - högst två nya hypoteser;
+   - högst tre P per gång, oftast ett eller inget.
+
+   Koden slår ihop ändringen med den befintliga modellen (`deltaOnly`,
+   `mergeIdeaModel`). Källmärkningen av de fem P:na kontrolleras som förut.
+3. **Användaren väntar bara på det som visas.** I steg 2, 3, 4 och 6 svarar
+   stegets anrop bara med kvittensen, Lindos tankar, frågan, idékartans
+   korta form och kartrörelsen.
+   - Ett eget litet anrop i bakgrunden (`updateIdeaModel`,
+     `src/lib/skarp/model-update.ts`) tar fram resten medan användaren läser
+     nästa skärm: idémodellens ändring, personprofilen (steg 2),
+     problemkartan (steg 4) och det som nu är mest osäkert.
+   - Det startar när steget är klart, inte på en följdfråga, och får se det
+     Lindo visade.
+   - En roll som byter till en annan grupp behålls bara när det Lindo
+     visade säger "Jag ändrar mig …", eller när användaren själv valt
+     gruppen. Annars behålls den gamla, utan ny runda.
+   - Nästa anrop som läser kontexten väntar in ändringen i högst 15 s och
+     går annars vidare utan den.
+   - Ändringen förs också in i de sparade skärmarna som bygger på samma
+     svar. Därför fungerar Tillbaka och oförändrat framåt som förut, och en
+     gren där svaret ändrats får aldrig en gammal ändring.
+
+   Steg 1 och 8 har kvar ändringen i sitt eget anrop: steg 8 följs direkt av
+   rådet, och steg 1:s anrop väntar ingen på.
+
+   **Anropsbudgeten:** 25 logiska anrop utan följdfrågor (19, två
+   marknadsbilder och fyra små bakgrundsanrop), 26 med ett tillägg i steg 1,
+   tak omkring 29. Bakgrundsanropen är små, men varje anrop skickar hela
+   kontexten igen.
+4. **Mindre utdata.**
+   - Fyra kortkandidater i stället för cirka sex; steg 8:s avstämning har
+     2–3. Användaren ser ändå 1–3 kort.
+   - Ordgränser på de fält i lösningskärnan, problemramen och slutkortet
+     som skrev mest: varför, talar för, tänk på, speglingen, underlaget,
+     nästa steg och testkortet. Fälten kortades redan i koden när de
+     visades, så inget som visas försvinner.
+   - Kompakt JSON i JSON-läget.
+   - Utan idémodellen ryms steg 2, 4 och 6 i strikt läge igen; steg 3 går
+     fortfarande som JSON.
+5. **Inga meningsrundor.** Regler om antal meningar ger inte längre en ny
+   runda. En sådan runda skriver om hela svaret och kostade 5–20 s.
+   - Koden visar den första meningen när den bär poängen (minst sex ord),
+     annars de två första om de ryms (`firstSentenceOrTwo`).
+   - Kontrollerna prövar det som visas.
+   - En enda för lång mening ger fortfarande en ny runda; ordgränserna
+     gäller.
+   - I frågor prövas frågemeningen.
+6. **Haiku som riktig reserv.** Skärp-kedjan håller 20 s åt Claude-reserven
+   (högst 45 % av det som återstår). I ett steg på 45 s får Sonnet 25 s och
+   Haiku 20 s; i lösningskärnans 55 s får Sonnet 35 s. Haikus egen gräns är
+   `ANTHROPIC_FALLBACK_TIMEOUT_MS` (standard 20 s). Kompass-kedjan är
+   oförändrad.
+7. **Mätningen.**
+   - Varje AI-försök noterar utdata-tokens, varav tänkande, i
+     `[skarp-tid]` och i `Server-Timing`.
+   - `npm run ai:smoke` visar utdata-tokens och tänkande per anrop.
+     Godkänt är 25 av 25 OK och inget anrop över 70 % av budgeten.
+   - `npm run ai:smoke -- --diagnos [scheman]` kör valda anrop ett i taget
+     utan stegets budget (tak 120 s). Det skriver tid, utdata-tokens,
+     tänkande och vilka fält som står för mest av det synliga svaret.
+
+**Konstruktion (`gxy652fxr`).**
+- `ai/effort.ts` (ny): nivån, modellerna som tar emot den och fältstorlekarna.
+- `ai/providers/anthropic.server.ts`: nivån, tokens per försök och kompakt
+  JSON.
+- `ai/budget.ts`: tokens i loggen och i Server-Timing.
+- `ai/index.ts` och `primary-with-fallback.server.ts`: Skärp-kedjans reserv.
+- `ai/health.server.ts`.
+- `skarp/model-update.ts` (ny).
+- `skarp/schemas.ts`: stegens scheman utan idémodellen, och de fyra nya.
+- `skarp/sharp.ts`: ändringsreglerna och fyra kandidater.
+- `skarp/idea-model.ts`: `deltaOnly`.
+- `skarp/text.ts`: `firstSentenceOrTwo`.
+- `skarp/validators.ts` och stegens kontroller: meningsreglerna.
+- `step2`, `step3`, `step4`, `step6`, `step5`, `step7` och `step10`.
+- `routes/skarp.tsx`: bakgrundsanropet och väntan.
+- Skripten: röktestet med `--diagnos`, schematestet, flödestestet, kunskapstestet och
+  kvalitetskörningen.
 
 ## 1. Principerna, kort
 

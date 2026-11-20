@@ -143,7 +143,7 @@ grundare:
 - **Frågor som går att svara på på tio sekunder:** Lindos hypotes +
   reaktion, "Vet inte" alltid okej (Lindo gissar, märkt som gissning,
   och går vidare), aldrig logistik eller kunskap om tredje part.
-- **Ta fram brett, visa smalt i kod:** modellen föreslår cirka sex kort
+- **Ta fram brett, visa smalt i kod:** modellen föreslår cirka sex kort (fyra sedan §0.23)
   och koden sållar bort det generiska, ramverksaktiga, redan sagda och
   motsägelsefulla — samma idé som det deterministiska verktygsvalet: det
   som går att kontrollera i kod görs i kod.
@@ -256,6 +256,26 @@ Pilotkörningen fastnade i steg 1 (svar efter ~80 s, Codespaces bröt efter
   som klienten frågar efter, så ingen förfrågan når proxyns gräns.
 - **Mätbarhet utan terminal:** `Server-Timing` på varje svar och en
   `[skarp-tid]`-rad per anrop.
+
+## Skärp: kort tänkande och idémodellen i bakgrunden (ai:smoke 2026-11-20)
+
+Fyra steg fick timeout och två låg över 70 % av budgeten. Loggarna visade
+varför: Sonnet 5.5 tänker adaptivt på nivån "high" som standard, och det
+dolda tänkandet var det mesta av utdatan. Rådet skrev till exempel cirka 500
+synliga tokens men 3 281 totalt. Längre tidsgränser var inget alternativ,
+eftersom användaren inte ska vänta 40 s per steg. Beslut, se
+`docs/skarp-flode.md` §0.23:
+
+- **Nivån "low" för Claudes tänkande i Skärp** (`SKARP_EFFORT`), som
+  Anthropic rekommenderar för innehåll och extraktion. Kompass berörs inte.
+- **Idémodellen som ändringar, och i steg 2, 3, 4 och 6 i ett eget litet
+  anrop i bakgrunden**, så att användaren bara väntar på det som visas.
+  Kostnaden är fyra anrop till per session (25 utan följdfrågor), som körs
+  medan användaren läser.
+- **Antal meningar ger ingen ny runda**: koden visar den första meningen,
+  eller två korta. Ordgränserna gäller.
+- **Fyra kortkandidater** i stället för cirka sex.
+- **Haiku får 20 s som reserv** i Skärp-kedjan.
 
 ## Skärp: stora scheman som icke-strikt JSON (ai:smoke 2026-11-19)
 

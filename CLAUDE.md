@@ -41,7 +41,7 @@ märkta "Lindos förslag" och visade med Boggels grafiska profil (gul
 accent, romber, papperskänsla, mjuk animation); (3) **EN fråga** med 2–4
 klickbara svar, "Vet inte" och fritext. Inga upprepningar av idén —
 idékartan visar helheten. Korten tas fram brett och visas smalt: modellen
-föreslår cirka sex kandidater och koden sållar bort det som kunde stått
+föreslår fyra kandidater (§0.23) och koden sållar bort det som kunde stått
 om vilken idé som helst, bara upprepar ett ramverk, redan sagts eller
 motsäger idémodellen; varje kort har något konkret (ett exempel, ett
 namngivet kundsegment, något ur marknadsbilden, ett första drag), högst
@@ -104,6 +104,21 @@ Vägrar Anthropic ändå ett strikt schema byter anropet direkt till JSON.
 `npm run skarp:scheman` larmar när ett schema närmar sig gränsen eller byter
 läge — kör det när ett schema ändras.
 
+**Snabbare svar (§0.23):** användaren väntar bara på det som visas.
+- **Kort tänkande:** Skärp skickar nivån "low" för Claudes tänkande
+  (`SKARP_EFFORT`). Sonnet 5.5 tänker annars på nivån "high", och det dolda
+  tänkandet var det mesta av utdatan.
+- **Idémodellen i bakgrunden:** idémodellen, personprofilen och
+  problemkartan är ändringar (bara det som är nytt) och tas i steg 2, 3, 4
+  och 6 fram av ett eget litet anrop (`updateIdeaModel`) medan användaren
+  läser. Nästa anrop väntar in det i högst 15 s.
+- **Inga meningsrundor:** antal meningar ger ingen ny runda. Koden visar den
+  första meningen eller två korta (`firstSentenceOrTwo`), och ordgränserna
+  gäller.
+- **Haiku som reserv:** Haiku får 20 s i ett steg.
+- **Diagnos:** `npm run ai:smoke -- --diagnos` visar tokens, tänkande och de
+  största fälten per anrop.
+
 Mät med `npm run skarp:matning -- "idé"`. Pröva alla scheman med full
 kontext med `npm run ai:smoke`.
 
@@ -121,7 +136,7 @@ gissning, och går vidare.
 
 **Idémodellen (§0.16):** Lindo har en löpande bild av idén i
 `ctx.ideaModel` — vem som säljer, köper, betalar och bestämmer,
-kärnhypoteserna, första kundgruppen och de fem P:na (§0.19) — som varje steg uppdaterar dolt och som skickas med i
+kärnhypoteserna, första kundgruppen och de fem P:na (§0.19) — som varje steg uppdaterar dolt (sedan §0.23 bara ändringarna, och i steg 2, 3, 4 och 6 i ett eget litet anrop i bakgrunden) och som skickas med i
 varje anrop tillsammans med det användaren sagt och det Lindo redan
 föreslagit. Lindo får inte motsäga sig själv utan att säga att den
 ändrar sig och varför, och samma perspektiv kommer inte tillbaka, inte
@@ -251,8 +266,9 @@ grunderna. Ett tyst klassificeringsanrop efter steg 1 bedömer idétyp,
 vad som redan är sagt (sagt är inte belagt), vad som är mest osäkert och
 avgörande och hur van användaren är, och vanlig kod väljer sedan
 deterministiskt vilka verktyg varje steg får i SKÄRPA-blocket.
-Anropsbudgeten är 21 logiska anrop utan följdfrågor (19 + två
-marknadsbilder), 22 med ett tillägg i steg 1, tak ~25 (§0.20). Frågan visar sitt
+Anropsbudgeten är 25 logiska anrop utan följdfrågor (19 + två
+marknadsbilder + fyra små bakgrundsanrop för idémodellen), 26 med ett
+tillägg i steg 1, tak ~29 (§0.20, §0.23). Frågan visar sitt
 perspektiv som en diskret etikett, mjuka kontroller stoppar statistik,
 påhittade namn och siffror, platta grundfrågor, facktermer och avskrivna
 exempel, och kvalitetsevalen i `docs/skarp-kvalitet.md` mäter om det
